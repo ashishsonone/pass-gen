@@ -5,8 +5,18 @@
 #  Please see COPYING for more information.
 #  Please see man pass-gen(1) for usage and configuration instructions
 
+# >>>>>>>> Changes start
+
+# Create ~/.passgenrc with following lines
+# WORDLIST=/Users/ashish/Documents/Personal/pass-gen/word-lists/EFF_wordlist_total
+# CHARLIST=/Users/ashish/Documents/Personal/pass-gen/character-lists/default_character_list
 
 #  Default settings (unless overridden by command-line options or .passgenrc)
+XCLIP_CMD=pbcopy #xclip replacement for Mac OSX
+# echo "echo 'Hello'" | pbcopy
+
+# <<<<<<<< Changes end
+
 WORDLIST=/usr/local/lib/pass-gen/wordlists/EFF_wordlist_total
 SIZE_OF_WORDLIST="not set"  # Not a user-set value; computed based on supplied list
 CHARLIST=/usr/local/lib/pass-gen/character-lists/default_character_list
@@ -14,8 +24,8 @@ SIZE_OF_CHARLIST="not set"  # Not a user-set value; computed based on supplied l
 PADDING_LENGTH_BEFORE=0
 PADDING_LENGTH_AFTER=3
 NUMBER_OF_WORDS=6
-CAPITAL_COUNTER="$(( $(od --address-radix=n --read-bytes=2 -i /dev/urandom) \
-  % (3) ))" 
+# CAPITAL_COUNTER="$(( $(od -A n -N 2 -i /dev/urandom) % (3) ))" 
+CAPITAL_COUNTER="$(( $(od -A n -N 2 -i /dev/urandom) % (3) ))" 
   # This generates a cryptographically lecture random number between 0 
   #   and 2 inclusive.  
   #
@@ -32,35 +42,35 @@ REPORT_ENTROPY=false
 
 
 #  If a configuration file exists, read values from it
-if [ -f /home/$USER/.passgenrc ]; then
+if [ -f /Users/$USER/.passgenrc ]; then
   echo "Reading preset values from ~/.passgenrc"
-  CONFIG_FILE="/home/$USER/.passgenrc"
+  CONFIG_FILE="/Users/$USER/.passgenrc"
   ## Find the `current_project` key, and get the quoted string value 
   if [ $(grep word-list $CONFIG_FILE) ]; then
-    WORDLIST=$(grep word-list $CONFIG_FILE | cut --delimiter== --fields=2)
+    WORDLIST=$(grep word-list $CONFIG_FILE | cut -d = -f 2)
     # `delimiter= ` sets the delimiter to <SPACE>
-    WORDLIST=$(echo $WORDLIST | sed --expression="s_~_/home/${USER}_")
+    WORDLIST=$(echo $WORDLIST | sed -e "s_~_/Users/${USER}_")
   fi
   
   if [ $(grep character-list $CONFIG_FILE) ]; then
-    CHARLIST=$(grep character-list $CONFIG_FILE | cut --delimiter== --fields=2)
-    CHARLIST=$(echo $CHARLIST | sed --expression="s_~_/home/${USER}_")
+    CHARLIST=$(grep character-list $CONFIG_FILE | cut -d = -f 2)
+    CHARLIST=$(echo $CHARLIST | sed -e "s_~_/Users/${USER}_")
   fi
 
   if [ $(grep capital-mode $CONFIG_FILE) ]; then
-    PADDING_LENGTH_BEFORE=$(grep capital-mode $CONFIG_FILE | cut --delimiter== --fields=2)
+    PADDING_LENGTH_BEFORE=$(grep capital-mode $CONFIG_FILE | cut -d = -f 2)
   fi
 
   if [ $(grep padding-before $CONFIG_FILE) ]; then
-    PADDING_LENGTH_BEFORE=$(grep padding-before $CONFIG_FILE | cut --delimiter== --fields=2)
+    PADDING_LENGTH_BEFORE=$(grep padding-before $CONFIG_FILE | cut -d = -f 2)
   fi
   
   if [ $(grep padding-after $CONFIG_FILE) ]; then
-    PADDING_LENGTH_AFTER=$(grep padding-after $CONFIG_FILE | cut --delimiter== --fields=2)
+    PADDING_LENGTH_AFTER=$(grep padding-after $CONFIG_FILE | cut -d = -f 2)
   fi
 
   if [ $(grep length $CONFIG_FILE) ]; then
-    NUMBER_OF_WORDS=$(grep length $CONFIG_FILE | cut --delimiter== --fields=2)
+    NUMBER_OF_WORDS=$(grep length $CONFIG_FILE | cut -d = -f 2)
   fi
 
   if [ $(grep echo-password $CONFIG_FILE) ]; then
@@ -243,7 +253,7 @@ generate_random_word() {
   MIN=1
   SIZE_OF_WORDLIST=$(cat $WORDLIST | wc -l)
   #  Generate a random number between MAX and MIN
-  RANDOM_NUM="$(( $MIN + $(od --address-radix=n --read-bytes=2 -i /dev/urandom) % ($SIZE_OF_WORDLIST - $MIN + 1) ))"
+  RANDOM_NUM="$(( $MIN + $(od -A n -N 2 -i /dev/urandom) % ($SIZE_OF_WORDLIST - $MIN + 1) ))"
 
   RANDOM_WORD="$(sed -n ${RANDOM_NUM}p $WORDLIST)"
 }
@@ -350,16 +360,16 @@ if [ "$DISPLAY_PASSWORD" = true ]; then
     clear_passphrase
     generate_passphrase
     echo $RANDOM_PASS
-    echo -n "$RANDOM_PASS" | xclip -selection "clipboard"
+    echo -n "$RANDOM_PASS" | $XCLIP_CMD
   done
   clear_passphrase
-  ( sleep 45 ; echo -n "" | xclip -selection "clipboard" ) &
+  ( sleep 45 ; echo -n "" | $XCLIP_CMD ) &
 else
   generate_passphrase
-  echo -n "$RANDOM_PASS" | xclip -selection "clipboard"
+  echo -n "$RANDOM_PASS" | $XCLIP_CMD
   >&2 echo "Generated passphrase copied to clipboard.  Will clear in 45 seconds."
   clear_passphrase
-  ( sleep 45 ; echo -n "" | xclip -selection "clipboard" ) &
+  ( sleep 45 ; echo -n "" | $XCLIP_CMD ) &
 fi
 
 if [[ "$REPORT_ENTROPY" = true ]]; then
